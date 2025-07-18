@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Eligibility Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #10b981;
+            --danger: #ef4444;
+        }
+        
+        .speech-btn {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+        }
+        
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+
+        /* Bot specific styles */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        @keyframes listening {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+        
+        .bot-container {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .voice-btn:hover .mic-icon {
+            animation: pulse 1.5s infinite;
+        }
+        
+        .listening .mic-icon {
+            animation: listening 1s infinite;
+            color: #3B82F6; /* Tailwind blue-600 */
+        }
+        
+        .bot-eyes {
+            transition: all 0.3s ease;
+        }
+        
+        .listening .bot-eyes {
+            transform: scaleY(0.6);
+        }
+        
+        .thinking .bot-eyes {
+            animation: pulse 0.5s infinite;
+        }
+        
+        .speaking .bot-mouth {
+            animation: talking 0.4s infinite alternate;
+        }
+        
+        @keyframes talking {
+            from { height: 6px; }
+            to { height: 12px; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-3xl">
+        <div class="flex items-center justify-center mb-8">
+            <h1 class="text-3xl font-bold text-indigo-600">Financial Eligibility Assistant</h1>
+        </div>
+
+        <!-- Bot Section - Integrated into the main layout -->
+        <div class="bg-blue-600 text-white p-4 rounded-xl shadow-lg mb-6 flex flex-col items-center justify-center">
+            <div class="bot-container relative mb-4">
+                <div class="w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center relative">
+                    <!-- Bot Eyes -->
+                    <div class="absolute flex space-x-4 top-8">
+                        <div class="bot-eyes w-4 h-4 bg-white rounded-full"></div>
+                        <div class="bot-eyes w-4 h-4 bg-white rounded-full"></div>
+                    </div>
+                    <!-- Bot Mouth -->
+                    <div class="bot-mouth absolute bottom-6 w-8 h-1.5 bg-white rounded-full"></div>
+                </div>
+            </div>
+            <h2 class="text-xl font-bold mb-2">Your Financial Assistant</h2>
+            <div id="bot-response" class="bg-blue-700 rounded-lg p-3 text-sm text-center min-h-12 flex items-center justify-center w-full max-w-md">
+                Hello! I'm here to help you check your eligibility.
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-800">Verification Dashboard</h2>
+                <p class="text-gray-600 mt-1">Check your eligibility for credit products</p>
+            </div>
+            
+            <div class="p-6">
+                <!-- Eligibility Criteria Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div class="bg-indigo-50 rounded-lg p-4 border-l-4 border-indigo-500">
+                        <h3 class="font-medium text-indigo-700 mb-2">Credit Card Eligibility</h3>
+                        <ul class="text-sm text-gray-700 space-y-1">
+                            <li>✓ Minimum credit score: 650</li>
+                            <li>✓ Minimum income: ₹2,50,000/year</li>
+                            <li>✓ Low debt-to-income ratio</li>
+                        </ul>
+                    </div>
+                    <div class="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
+                        <h3 class="font-medium text-green-700 mb-2">Loan Eligibility</h3>
+                        <ul class="text-sm text-gray-700 space-y-1">
+                            <li>✓ Minimum credit score: 680</li>
+                            <li>✓ Stable employment history</li>
+                            <li>✓ Debt-to-income < 40%</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Verification Form -->
+                <div id="verificationForm">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                            <div class="flex items-center">
+                                <input id="fullName" type="text" class="flex-grow py-2 px-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="John Doe">
+                                <button type="button" data-field="fullName" class="voice-btn speech-btn flex-shrink-0 w-10 h-10 rounded-r-md bg-indigo-600 text-white flex items-center justify-center focus:outline-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mic-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Aadhar Number</label>
+                            <div class="flex items-center">
+                                <input id="aadharNumber" type="text" class="flex-grow py-2 px-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="XXXX XXXX XXXX" pattern="[0-9]{4} [0-9]{4} [0-9]{4}">
+                                <button type="button" data-field="aadharNumber" class="voice-btn speech-btn flex-shrink-0 w-10 h-10 rounded-r-md bg-indigo-600 text-white flex items-center justify-center focus:outline-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mic-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">PAN Number</label>
+                            <div class="flex items-center">
+                                <input id="panNumber" type="text" class="flex-grow py-2 px-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="ABCDE1234F" pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}">
+                                <button type="button" data-field="panNumber" class="voice-btn speech-btn flex-shrink-0 w-10 h-10 rounded-r-md bg-indigo-600 text-white flex items-center justify-center focus:outline-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mic-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+                            <div class="flex items-center">
+                                <input id="dob" type="date" class="flex-grow py-2 px-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                <button type="button" data-field="dob" class="voice-btn speech-btn flex-shrink-0 w-10 h-10 rounded-r-md bg-indigo-600 text-white flex items-center justify-center focus:outline-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mic-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Annual Income</label>
+                            <div class="relative flex items-center">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">₹</span>
+                                <input id="income" type="number" class="flex-grow pl-8 pr-12 py-2 border border-gray-300 rounded-l-md focus:ring-indigo-500 focus:border-indigo-500" placeholder="50000">
+                                <button type="button" data-field="income" class="voice-btn speech-btn flex-shrink-0 w-10 h-10 rounded-r-md bg-indigo-600 text-white flex items-center justify-center focus:outline-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mic-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                                                
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Employment Status</label>
+                            <div class="flex items-center">
+                                <select id="employmentStatus" class="flex-grow py-2 px-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="">Select Status</option>
+                                    <option value="employed">Employed (Full-time)</option>
+                                    <option value="self-employed">Self-Employed</option>
+                                    <option value="part-time">Part-time</option>
+                                    <option value="unemployed">Unemployed</option>
+                                </select>
+                                <button type="button" data-field="employmentStatus" class="voice-btn speech-btn flex-shrink-0 w-10 h-10 rounded-r-md bg-indigo-600 text-white flex items-center justify-center focus:outline-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mic-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Existing Monthly Debt Payments</label>
+                            <div class="relative flex items-center">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">₹</span>
+                                <input id="monthlyDebt" type="number" class="flex-grow pl-8 py-2 border border-gray-300 rounded-l-md focus:ring-indigo-500 focus:border-indigo-500" placeholder="500">
+                                <button type="button" data-field="monthlyDebt" class="voice-btn speech-btn flex-shrink-0 w-10 h-10 rounded-r-md bg-indigo-600 text-white flex items-center justify-center focus:outline-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mic-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- New Fields: Mobile, Email, Address, City, State, Pin Code -->
+                        <h3 class="text-lg font-medium text-gray-800 mb-3 mt-6">Contact Information</h3>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
+                            <div class="flex items-center">
+                                <input id="mobileNumber" type="tel" class="flex-grow py-2 px-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., 9876543210">
+                                <button type="button" data-field="mobileNumber" class="voice-btn speech-btn flex-shrink-0 w-10 h-10 rounded-r-md bg-indigo-600 text-white flex items-center justify-center focus:outline-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mic-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                            <div class="flex items-center">
+                                <input id="emailAddress" type="email" class="flex-grow py-2 px-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="your.email@example.com">
+                                <button type="button" data-field="emailAddress" class="voice-btn speech-btn flex-shrink-0 w-10 h-10 rounded-r-md bg-indigo-600 text-white flex items-center justify-center focus:outline-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mic-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
+                            <div class="flex items-center">
+                                <input id="streetAddress" type="text" class="flex-grow py-2 px-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="House No., Street Name">
+                                <button type="button" data-field="streetAddress" class="voice-btn speech-btn flex-shrink-0 w-10 h-10 rounded-r-md bg-indigo-600 text-white flex items-center justify-center focus:outline-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mic-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                            <div class="flex items-center">
+                                <input id="city" type="text" class="flex-grow py-2 px-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="City Name">
+                                <button type="button" id="locateCityBtn" class="flex-shrink-0 w-10 h-10 bg-blue-500 text-white flex items-center justify-center focus:outline-none hover:bg-blue-600 transition-colors" title="Locate my city">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </button>
+                                <button type="button" data-field="city" class="voice-btn speech-btn flex-shrink-0 w-10 h-10 rounded-r-md bg-indigo-600 text-white flex items-center justify-center focus:outline-none ml-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mic-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">State</label>
+                            <div class="flex items-center">
+                                <input id="state" type="text" class="flex-grow py-2 px-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="State Name">
+                                <button type="button" data-field="state" class="voice-btn speech-btn flex-shrink-0 w-10 h-10 rounded-r-md bg-indigo-600 text-white flex items-center justify-center focus:outline-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mic-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Pin Code</label>
+                            <div class="flex items-center">
+                                <input id="pinCode" type="text" class="flex-grow py-2 px-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., 123456">
+                                <button type="button" data-field="pinCode" class="voice-btn speech-btn flex-shrink-0 w-10 h-10 rounded-r-md bg-indigo-600 text-white flex items-center justify-center focus:outline-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mic-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-800 mb-3 mt-6">Required Documents</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Aadhar Card</label>
+                                    <input id="aadharCardFile" type="file" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">PAN Card</label>
+                                    <input id="panCardFile" type="file" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">3 Month Salary Slips</label>
+                                    <input id="salarySlipsFile" type="file" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">6 Month Bank Statement</label>
+                                    <input id="bankStatementFile" type="file" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 flex justify-end">
+                        <button id="checkEligibility" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                            Check Eligibility
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-800">Your Eligibility Results</h2>
+            </div>
+            
+            <div class="p-6">
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium text-gray-800 mb-3">Debt-to-Income Ratio</h3>
+                    <div class="w-full bg-gray-200 rounded-full h-4">
+                        <div id="dtiBar" class="progress-bar h-4 rounded-full bg-indigo-600" style="width: 0%"></div>
+                    </div>
+                    <p id="dtiText" class="text-sm text-gray-600 mt-1">Calculating...</p>
+                </div>
+                
+                <div class="space-y-5">
+                    <div class="card p-4 border rounded-lg">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center mr-4">
+                                <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/9b604736-54a3-4300-bfa2-48f03e02d3c4.png" alt="Credit card illustration showing a blue credit card with chip" class="w-10">
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-medium text-gray-800">Credit Card Eligibility</h3>
+                                <div id="creditCardResult" class="mt-2">
+                                    <p class="text-gray-600">Checking your credit card eligibility...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card p-4 border rounded-lg">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mr-4">
+                                <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/ed613c01-a49e-409a-bdd2-698a584e7370.png" alt="Loan illustration showing a document with dollar sign" class="w-10">
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-medium text-gray-800">Loan Eligibility</h3>
+                                <div id="loanResult" class="mt-2">
+                                    <p class="text-gray-600">Checking your loan eligibility...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <h3 class="text-md font-medium text-blue-800 mb-2">Recommendations</h3>
+                    <div id="recommendations" class="text-sm text-blue-700">
+                        <p>We'll provide personalized recommendations based on your financial profile.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <!-- Credit Score Chart -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden mt-6">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-800">Credit Score Analysis</h2>
+                <p class="text-gray-600 mt-1">Your creditworthiness evaluation</p>
+            </div>
+            <div class="p-6">
+                <div class="flex justify-center">
+                    <div class="w-64 h-64 bg-indigo-50 rounded-full flex items-center justify-center">
+                        <div class="text-center">
+                            <div class="text-4xl font-bold text-indigo-600">720</div>
+                            <div class="text-sm text-gray-500 mt-2">Good Credit Score</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <div class="flex justify-between text-sm text-gray-600 mb-2">
+                        <span>300 (Poor)</span>
+                        <span>850 (Excellent)</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div class="bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 h-2.5 rounded-full" style="width: 71%"></div>
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <div class="text-xs text-gray-500">300-579: Poor</div>
+                        <div class="text-xs text-gray-500">580-669: Fair</div>
+                        <div class="text-xs text-gray-500">670-739: Good</div>
+                        <div class="text-xs text-gray-500">740-799: Very Good</div>
+                        <div class="text-xs text-gray-500">800-850: Excellent</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Speech recognition setup
+            const botContainer = document.querySelector('.bot-container');
+            const botResponse = document.getElementById('bot-response');
+            const voiceBtns = document.querySelectorAll('.voice-btn'); // For form fields
+            const synth = window.speechSynthesis;
+            
+            let recognition;
+            let currentField = ''; // To track which form field is being filled
+            let documentUploadStep = 0; // 0: not in doc upload, 1: Aadhar, 2: PAN, 3: Salary, 4: Bank Statement
+
+            const documentFields = [
+                { id: 'aadharCardFile', name: 'Aadhar Card' },
+                { id: 'panCardFile', name: 'PAN Card' },
+                { id: 'salarySlipsFile', name: '3 Month Salary Slips' },
+                { id: 'bankStatementFile', name: '6 Month Bank Statement' }
+            ];
+
+            try {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                
+                recognition.onstart = function() {
+                    // Only highlight the active voice button if it's a form field
+                    if (documentUploadStep === 0) {
+                        voiceBtns.forEach(btn => btn.classList.remove('listening'));
+                        const activeVoiceBtn = document.querySelector(`.voice-btn[data-field="${currentField}"]`);
+                        if (activeVoiceBtn) {
+                            activeVoiceBtn.classList.add('listening');
+                        }
+                    }
+                    botContainer.classList.add('listening');
+                    botResponse.textContent = 'Listening...';
+                };
+                
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript.trim();
+                    if (documentUploadStep > 0) {
+                        processDocumentUploadCommand(transcript);
+                    } else {
+                        processVoiceInput(transcript);
+                    }
+                };
+                
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error', event.error);
+                    botResponse.textContent = 'Error listening. Please try again.';
+                    botContainer.classList.remove('listening');
+                    speakErrorResponse('I had trouble hearing you. Please try again.');
+                    voiceBtns.forEach(btn => btn.classList.remove('listening')); // Clear any active voice button
+                };
+                
+                recognition.onend = function() {
+                    botContainer.classList.remove('listening');
+                    voiceBtns.forEach(btn => btn.classList.remove('listening')); // Clear any active voice button
+                };
+            } catch(e) {
+                console.error('Speech recognition not supported', e);
+                voiceBtns.forEach(btn => {
+                    btn.disabled = true;
+                    btn.title = 'Voice input not supported in your browser';
+                });
+                botResponse.textContent = 'Voice input not supported in your browser';
+                speakErrorResponse('Voice input is not supported in your browser. Please use the keyboard.');
+            }
+            
+            // Text-to-speech functions
+            function speakResponse(text, callback) {
+                if (synth) {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.rate = 1;
+                    utterance.pitch = 1;
+                    
+                    botContainer.classList.add('speaking');
+                    utterance.onend = function() {
+                        botContainer.classList.remove('speaking');
+                        if (callback) callback();
+                    };
+                    
+                    synth.speak(utterance);
+                } else {
+                    if (callback) callback(); // If no speech synth, just call callback immediately
+                }
+            }
+            
+            function speakErrorResponse(text, callback) {
+                if (synth) {
+                    const utterance = new SpeechSynthesisUtterance(text || 'Sorry, I didn\'t understand that. Please try again.');
+                    utterance.rate = 1;
+                    utterance.pitch = 0.9;
+                    
+                    botContainer.classList.add('speaking');
+                    utterance.onend = function() {
+                        botContainer.classList.remove('speaking');
+                        if (callback) callback();
+                    };
+                    
+                    synth.speak(utterance);
+                } else {
+                    if (callback) callback(); // If no speech synth, just call callback immediately
+                }
+            }
+
+            // Main form field voice processing
+            function processVoiceInput(transcript) {
+                botContainer.classList.add('thinking');
+                botResponse.textContent = `Processing: "${transcript}"`;
+                
+                let responseText = '';
+                const field = document.getElementById(currentField);
+                
+                try {
+                    switch(currentField) {
+                        case 'fullName':
+                            if (/^[a-zA-Z\s.]+$/.test(transcript)) { // Allows letters, spaces, and periods
+                                field.value = transcript;
+                                responseText = `Got it! Your full name is ${transcript}.`;
+                            } else {
+                                responseText = 'Please say a valid name with only letters and spaces.';
+                                throw new Error('Invalid name');
+                            }
+                            break;
+                            
+                        case 'aadharNumber':
+                            const aadharDigits = transcript.replace(/\D/g, ''); // Remove non-digits
+                            if (aadharDigits.length === 12) {
+                                const formattedAadhar = aadharDigits.match(/.{1,4}/g).join(' ');
+                                field.value = formattedAadhar;
+                                responseText = `Thank you! Your Aadhar number is ${formattedAadhar}.`;
+                            } else {
+                                responseText = 'Please say a 12-digit Aadhar number.';
+                                throw new Error('Invalid Aadhar');
+                            }
+                            break;
+                            
+                        case 'panNumber':
+                            const panValue = transcript.toUpperCase().replace(/\s/g, ''); // Remove spaces, convert to uppercase
+                            if (/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panValue)) {
+                                field.value = panValue;
+                                responseText = `Confirmed! Your PAN number is ${panValue}.`;
+                            } else {
+                                responseText = 'Please say a valid PAN number, like A B C D E 1 2 3 4 F.';
+                                throw new Error('Invalid PAN');
+                            }
+                            break;
+                            
+                        case 'dob':
+                            // Attempt to parse common date formats from speech
+                            const date = new Date(transcript);
+                            if (!isNaN(date.getTime())) {
+                                const year = date.getFullYear();
+                                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                                const day = date.getDate().toString().padStart(2, '0');
+                                field.value = `${year}-${month}-${day}`;
+                                responseText = `Date of birth set to ${day}/${month}/${year}.`;
+                            } else {
+                                responseText = 'Please say your date of birth clearly, for example, "January 1st, 1990".';
+                                throw new Error('Invalid DOB');
+                            }
+                            break;
+                            
+                        case 'income':
+                            const incomeValue = parseFloat(transcript.replace(/[^0-9.]/g, '')); // Remove non-numeric except dot
+                            if (!isNaN(incomeValue) && incomeValue > 0) {
+                                field.value = incomeValue;
+                                responseText = `Your annual income is set to ₹${incomeValue.toLocaleString()}.`;
+                            } else {
+                                responseText = 'Please state your annual income as a number.';
+                                throw new Error('Invalid income');
+                            }
+                            break;
+                            
+                        case 'employmentStatus':
+                            const statusLower = transcript.toLowerCase();
+                            let selectedStatus = '';
+                            if (statusLower.includes('employed') || statusLower.includes('full-time')) {
+                                selectedStatus = 'employed';
+                            } else if (statusLower.includes('self-employed')) {
+                                selectedStatus = 'self-employed';
+                            } else if (statusLower.includes('part-time')) {
+                                selectedStatus = 'part-time';
+                            } else if (statusLower.includes('unemployed') || statusLower.includes('no job')) {
+                                selectedStatus = 'unemployed';
+                            }
+                            
+                            if (selectedStatus) {
+                                field.value = selectedStatus;
+                                responseText = `Employment status set to ${field.options[field.selectedIndex].text}.`;
+                            } else {
+                                responseText = 'Please say "employed", "self-employed", "part-time", or "unemployed".';
+                                throw new Error('Invalid employment status');
+                            }
+                            break;
+                            
+                        case 'monthlyDebt':
+                            const debtValue = parseFloat(transcript.replace(/[^0-9.]/g, ''));
+                            if (!isNaN(debtValue) && debtValue >= 0) {
+                                field.value = debtValue;
+                                responseText = `Monthly debt payments set to ₹${debtValue.toLocaleString()}.`;
+                            } else {
+                                responseText = 'Please state your monthly debt payments as a number.';
+                                throw new Error('Invalid debt');
+                            }
+                            break;
+
+                        case 'mobileNumber':
+                            const mobileDigits = transcript.replace(/\D/g, '');
+                            if (mobileDigits.length === 10) {
+                                field.value = mobileDigits;
+                                responseText = `Mobile number set to ${mobileDigits}.`;
+                            } else {
+                                responseText = 'Please say a 10-digit mobile number.';
+                                throw new Error('Invalid mobile number');
+                            }
+                            break;
+
+                        case 'emailAddress':
+                            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                            if (emailRegex.test(transcript.toLowerCase())) {
+                                field.value = transcript.toLowerCase();
+                                responseText = `Email address set to ${transcript.toLowerCase()}.`;
+                            } else {
+                                responseText = 'Please say a valid email address.';
+                                throw new Error('Invalid email address');
+                            }
+                            break;
+
+                        case 'streetAddress':
+                            field.value = transcript;
+                            responseText = `Street address set to ${transcript}.`;
+                            break;
+
+                        case 'city':
+                            field.value = transcript;
+                            responseText = `City set to ${transcript}.`;
+                            break;
+
+                        case 'state':
+                            field.value = transcript;
+                            responseText = `State set to ${transcript}.`;
+                            break;
+
+                        case 'pinCode':
+                            const pinDigits = transcript.replace(/\D/g, '');
+                            if (pinDigits.length === 6) { // Assuming 6-digit Indian PIN code
+                                field.value = pinDigits;
+                                responseText = `Pin code set to ${pinDigits}.`;
+                            } else {
+                                responseText = 'Please say a 6-digit pin code.';
+                                throw new Error('Invalid pin code');
+                            }
+                            break;
+                            
+                        default:
+                            responseText = 'I didn\'t understand that field. Can you try again?';
+                            throw new Error('Unknown field');
+                    }
+                    
+                    botResponse.textContent = responseText;
+                    speakResponse(responseText);
+                    
+                } catch (error) {
+                    speakErrorResponse(responseText);
+                }
+                
+                botContainer.classList.remove('thinking');
+            }
+
+            // Document upload voice processing
+            function processDocumentUploadCommand(transcript) {
+                botContainer.classList.add('thinking');
+                botResponse.textContent = `Processing: "${transcript}"`;
+                
+                const userResponse = transcript.toLowerCase();
+                if (userResponse.includes('done') || userResponse.includes('uploaded') || userResponse.includes('next') || userResponse.includes('yes')) {
+                    speakResponse("Great! Moving to the next document.", startNextDocumentPrompt);
+                } else if (userResponse.includes('skip') || userResponse.includes('later') || userResponse.includes('no')) {
+                    speakResponse("Okay, you can upload this document later. Moving to the next one.", startNextDocumentPrompt);
+                } else {
+                    speakErrorResponse("I didn't quite catch that. Please say 'done' when you've uploaded the document, or 'skip' to move to the next.", function() {
+                        // Re-prompt for the current document
+                        startDocumentPrompt(documentUploadStep - 1); // -1 because step is already incremented
+                    });
+                }
+                botContainer.classList.remove('thinking');
+            }
+
+            function startDocumentPrompt(index) {
+                if (index < documentFields.length) {
+                    documentUploadStep = index + 1; // Set current step (1-indexed)
+                    const doc = documentFields[index];
+                    const docLabel = document.querySelector(`label[for="${doc.id}"]`).textContent.trim();
+                    botResponse.textContent = `Please upload your ${docLabel}. Click the "Choose File" button next to it. Say "done" when finished.`;
+                    speakResponse(`Now, please upload your ${docLabel}. Click the "Choose File" button next to it. When you are done, please say "done".`, function() {
+                        // Activate recognition to listen for "done" or "skip"
+                        try {
+                            recognition.start();
+                        } catch(e) {
+                            console.error('Recognition start error for document upload:', e);
+                            botResponse.textContent = 'Error starting voice recognition for document upload.';
+                            speakErrorResponse('I could not start the microphone for document upload. Please proceed manually.');
+                        }
+                    });
+                } else {
+                    documentUploadStep = 0; // Reset
+                    speakResponse("All documents prompts completed. You can now click 'Check Eligibility' to see your results.");
+                    botResponse.textContent = "All documents prompts completed.";
+                }
+            }
+
+            function startNextDocumentPrompt() {
+                startDocumentPrompt(documentUploadStep); // documentUploadStep is already 1-indexed, so it's the next index
+            }
+            
+            // Voice button handlers for main form fields
+            voiceBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (!recognition) {
+                        botResponse.textContent = 'Voice input not supported in your browser';
+                        speakErrorResponse('Voice input is not supported in your browser. Please use the keyboard.');
+                        return;
+                    }
+                    
+                    currentField = this.getAttribute('data-field');
+                    documentUploadStep = 0; // Ensure we are not in document upload mode
+                    const labelElement = document.querySelector(`label[for="${currentField}"]`);
+                    const fieldLabel = labelElement ? labelElement.textContent.replace(':', '').trim() : currentField;
+                    
+                    botResponse.textContent = `Speak your ${fieldLabel.toLowerCase()}`;
+                    speakResponse(`Please speak your ${fieldLabel.toLowerCase()} now.`, function() {
+                        try {
+                            recognition.start();
+                        } catch(e) {
+                            console.error('Recognition start error:', e);
+                            botResponse.textContent = 'Error starting voice recognition. Please ensure your microphone is connected.';
+                            speakErrorResponse('I could not start the microphone. Please check your microphone settings.');
+                        }
+                    });
+                });
+            });
+
+            // Geolocation for City
+            document.getElementById('locateCityBtn').addEventListener('click', function() {
+                if (navigator.geolocation) {
+                    botResponse.textContent = "Locating your city...";
+                    speakResponse("Please allow location access so I can find your city.", function() {
+                        navigator.geolocation.getCurrentPosition(function(position) {
+                            const lat = position.coords.latitude;
+                            const lon = position.coords.longitude;
+                            
+                            // Using OpenStreetMap Nominatim for reverse geocoding
+                            const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`;
+                            
+                            fetch(nominatimUrl)
+                                .then(response => response.json())
+                                .then(data => {
+                                    const city = data.address.city || data.address.town || data.address.village || data.address.county;
+                                    const state = data.address.state;
+                                    const pinCode = data.address.postcode;
+
+                                    if (city) {
+                                        document.getElementById('city').value = city;
+                                        botResponse.textContent = `City set to ${city}.`;
+                                        speakResponse(`I found your city as ${city}.`);
+                                    } else {
+                                        botResponse.textContent = "Could not determine city from your location.";
+                                        speakErrorResponse("Sorry, I could not determine your city from your location.");
+                                    }
+                                    if (state) {
+                                        document.getElementById('state').value = state;
+                                    }
+                                    if (pinCode) {
+                                        document.getElementById('pinCode').value = pinCode;
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error during geocoding:', error);
+                                    botResponse.textContent = "Error getting city data.";
+                                    speakErrorResponse("There was an error getting your city data. Please enter it manually.");
+                                });
+                        }, function(error) {
+                            console.error('Geolocation error:', error);
+                            let errorMessage = "Unable to retrieve your location.";
+                            if (error.code === error.PERMISSION_DENIED) {
+                                errorMessage = "Location access denied. Please enable it in your browser settings.";
+                            } else if (error.code === error.POSITION_UNAVAILABLE) {
+                                errorMessage = "Location information is unavailable.";
+                            } else if (error.code === error.TIMEOUT) {
+                                errorMessage = "The request to get user location timed out.";
+                            }
+                            botResponse.textContent = errorMessage;
+                            speakErrorResponse(errorMessage + " Please enter your city manually.");
+                        });
+                    });
+                } else {
+                    botResponse.textContent = "Geolocation is not supported by your browser.";
+                    speakErrorResponse("Geolocation is not supported by your browser. Please enter your city manually.");
+                }
+            });
+
+
+            // Eligibility Check Logic (from original code, slightly modified for bot interaction)
+            document.getElementById('checkEligibility').addEventListener('click', function() {
+                // Get form values
+                const income = parseFloat(document.getElementById('income').value) || 0;
+                const creditScore = 720; // Default/generated score for demo
+                const employmentStatus = document.getElementById('employmentStatus').value;
+                const monthlyDebt = parseFloat(document.getElementById('monthlyDebt').value) || 0;
+                
+                // Basic validation before proceeding
+                if (!document.getElementById('fullName').value || !document.getElementById('aadharNumber').value || !document.getElementById('panNumber').value || !document.getElementById('dob').value || income === 0 || !employmentStatus || monthlyDebt === 0 || !document.getElementById('mobileNumber').value || !document.getElementById('emailAddress').value || !document.getElementById('streetAddress').value || !document.getElementById('city').value || !document.getElementById('state').value || !document.getElementById('pinCode').value) {
+                    speakErrorResponse("Please fill in all required fields before checking eligibility.");
+                    botResponse.textContent = "Please fill in all required fields.";
+                    return;
+                }
+
+                // Start document upload sequence if not already done
+                if (documentUploadStep === 0) {
+                    speakResponse("Now, let's go through the required documents. Please upload them one by one.", function() {
+                        startDocumentPrompt(0); // Start with the first document
+                    });
+                    return; // Stop here, wait for document uploads
+                }
+
+                speakResponse("Calculating your eligibility. Please wait a moment.");
+                botResponse.textContent = "Calculating eligibility...";
+
+                // Calculate DTI
+                const monthlyIncome = income / 12;
+                const dtiRatio = monthlyIncome > 0 ? (monthlyDebt / monthlyIncome) * 100 : 0;
+                
+                // Show results section
+                document.getElementById('resultsSection').classList.remove('hidden');
+                
+                // Animate DTI bar
+                const dtiBar = document.getElementById('dtiBar');
+                let width = 0;
+                const id = setInterval(frame, 10);
+                function frame() {
+                    if (width >= dtiRatio) {
+                        clearInterval(id);
+                    } else {
+                        width++;
+                        dtiBar.style.width = width + '%';
+                    }
+                }
+                
+                document.getElementById('dtiText').textContent = `Your debt-to-income ratio is ${dtiRatio.toFixed(1)}%`;
+                
+                // Determine credit card eligibility
+                const creditCardResult = document.getElementById('creditCardResult');
+                setTimeout(() => {
+                    let cardEligible = false;
+                    let cardMessage = '';
+                    let cardClass = '';
+                    
+                    if (creditScore >= 650 && income >= 250000 && dtiRatio < 40) { // Corrected income threshold
+                        cardEligible = true;
+                        cardMessage = '✓ Eligible for our premium credit cards!';
+                        cardClass = 'text-green-600';
+                    } else if (creditScore >= 600 && income >= 180000 && dtiRatio < 50) { // Corrected income threshold
+                        cardEligible = true;
+                        cardMessage = '✓ Eligible for our standard credit cards.';
+                        cardClass = 'text-green-600';
+                    } else {
+                        cardMessage = '✗ Currently not eligible for credit cards.';
+                        cardClass = 'text-red-600';
+                    }
+                    
+                    creditCardResult.innerHTML = `
+                        <p class="${cardClass}">${cardMessage}</p>
+                        <ul class="text-sm text-gray-600 mt-2 space-y-1">
+                            <li>• Your credit score: ${creditScore}</li>
+                            <li>• Annual income: ₹${income.toLocaleString()}</li>
+                            <li>• DTI ratio: ${dtiRatio.toFixed(1)}%</li>
+                        </ul>
+                    `;
+                    speakResponse(`For credit cards: ${cardMessage}`);
+                }, 1500); // Increased delay for better flow
+                
+                // Determine loan eligibility
+                const loanResult = document.getElementById('loanResult');
+                setTimeout(() => {
+                    let loanEligible = false;
+                    let loanMessage = '';
+                    let loanClass = '';
+                    let loanAmount = 0;
+                    
+                    if (creditScore >= 720 && income >= 300000 && (employmentStatus === 'employed' || employmentStatus === 'self-employed') && dtiRatio < 35) { // Corrected income threshold
+                        loanEligible = true;
+                        loanAmount = income * 0.5;
+                        loanMessage = `✓ Eligible for up to Rs${loanAmount.toLocaleString()} loan!`;
+                        loanClass = 'text-green-600';
+                    } else if (creditScore >= 680 && income >= 250000 && dtiRatio < 40) { // Corrected income threshold
+                        loanEligible = true;
+                        loanAmount = income * 0.3;
+                        loanMessage = `✓ Eligible for up to Rs${loanAmount.toLocaleString()} loan.`;
+                        loanClass = 'text-green-600';
+                    } else {
+                        loanMessage = '✗ Currently not eligible for loans.';
+                        loanClass = 'text-red-600';
+                    }
+                    
+                    loanResult.innerHTML = `
+                        <p class="${loanClass}">${loanMessage}</p>
+                        <ul class="text-sm text-gray-600 mt-2 space-y-1">
+                            <li>• Employment status: ${employmentStatus.replace('-', ' ')}</li>
+                            <li>• Credit score: ${creditScore}</li>
+                            <li>• DTI ratio: ${dtiRatio.toFixed(1)}%</li>
+                        </ul>
+                    `;
+                    speakResponse(`And for loans: ${loanMessage}`);
+                }, 2500); // Increased delay for better flow
+                
+                // Provide recommendations
+                const recommendations = document.getElementById('recommendations');
+                setTimeout(() => {
+                    let recs = [];
+                    
+                    if (!loanEligible && creditScore < 680) {
+                        recs.push("Improve your credit score to at least 680 for better loan options.");
+                    }
+                    
+                    if (dtiRatio > 35) {
+                        recs.push("Reduce your debt-to-income ratio below 35% by paying down existing debts.");
+                    }
+                    
+                    if (employmentStatus === 'unemployed' || employmentStatus === 'part-time') {
+                        recs.push("Getting full-time employment will improve your eligibility.");
+                    }
+                    
+                    // Verify document and ID number completeness
+                    const aadharNum = document.getElementById('aadharNumber').value;
+                    const panNum = document.getElementById('panNumber').value;
+                    
+                    if (!aadharNum || !panNum) {
+                        recs.push("Please complete your Aadhar and PAN details for faster verification.");
+                    }
+                    // Check if files are actually selected (though voice can't do this, it's good to remind)
+                    if (!document.getElementById('aadharCardFile').files.length || !document.getElementById('panCardFile').files.length || !document.getElementById('salarySlipsFile').files.length || !document.getElementById('bankStatementFile').files.length) {
+                         recs.push("Please ensure all required documents are uploaded to complete your application.");
+                    }
+
+                    if (recs.length === 0) {
+                        recs.push("You have a strong financial profile! Consider applying for our premium credit products.");
+                    }
+                    
+                    recommendations.innerHTML = recs.map(rec => `<p class="mb-2">• ${rec}</p>`).join('');
+                    speakResponse("Here are some recommendations for you.");
+                    recs.forEach((rec, index) => {
+                        setTimeout(() => speakResponse(rec), 3000 + (index * 1000)); // Stagger recommendations
+                    });
+
+                }, 3000); // Increased delay for better flow
+            });
+
+            // Initial greeting from the bot
+            speakResponse('Hello! I am your financial eligibility assistant. Please click on the microphone next to each field to provide your details.');
+        });
+    </script>
+</body>
+</html>
